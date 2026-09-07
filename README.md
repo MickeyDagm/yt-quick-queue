@@ -39,6 +39,7 @@ The Weeknd - Blinding Lights, Michael Jackson - Billie Jean
 
 3. Check the live preview list:
    - Click the `×` button next to any unwanted song to remove it.
+   - Drag and drop items to reorder them in the queue.
    - Click **Clear All** to start fresh.
 4. Click **Play All (N)**.
 5. A new tab opens with all tracks queued up sequentially in YouTube's native playlist player!
