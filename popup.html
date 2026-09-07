@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+      </svg>
+      <h3>YT Quick Queue</h3>
+    </div>
+    <!-- Top-right Close Button -->
+    <button id="closePanelBtn" class="icon-btn" title="Close Panel">✕</button>
+  </div>
+
+  <textarea id="songList" placeholder="Paste messy songs here (bullets, numbers, commas, or lines)..."></textarea>
+
+  <div id="previewWrapper" class="hidden">
+    <div class="preview-header">
+      <div class="preview-title">
+        <span>Detected Tracks</span>
+        <span id="trackCount" class="badge">0</span>
+      </div>
+      <!-- Clear All Button -->
+      <button id="clearAllBtn" class="clear-btn" type="button">Clear All</button>
+    </div>
+    <ul id="previewList"></ul>
+  </div>
+
+  <button id="startBtn">Play All</button>
+  <div id="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
