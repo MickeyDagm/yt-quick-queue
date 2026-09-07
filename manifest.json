@@ -5,7 +5,8 @@
   "description": "Create an instant YouTube playlist from a text list of songs.",
   "permissions": [
     "tabs",
-    "sidePanel"
+    "sidePanel",
+    "scripting"
   ],
   "host_permissions": [
     "https://www.youtube.com/*"

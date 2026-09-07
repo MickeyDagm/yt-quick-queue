@@ -5,33 +5,88 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="header">
-    <div class="header-left">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
-      </svg>
-      <h3>YT Quick Queue</h3>
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
+        </svg>
+      </div>
+      <h2>QuickQueue</h2>
     </div>
-    <!-- Top-right Close Button -->
-    <button id="closePanelBtn" class="icon-btn" title="Close Panel">✕</button>
-  </div>
+    <div class="header-actions">
+      <button id="toggleInputBtn" class="icon-btn hidden" title="Edit Song List">
+        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      </button>
+      <button id="closePanelBtn" class="icon-btn" title="Close">✕</button>
+    </div>
+  </header>
 
-  <textarea id="songList" placeholder="Paste messy songs here (bullets, numbers, commas, or lines)..."></textarea>
+  <!-- Input Section (Can be collapsed) -->
+  <section id="inputSection" class="input-section">
+    <div class="options-bar">
+      <label class="toggle-pill">
+        <input type="checkbox" id="studioAudioToggle" checked>
+        <span class="pill-slider"></span>
+        <span class="pill-label">Studio Audio Only</span>
+      </label>
+    </div>
 
-  <div id="previewWrapper" class="hidden">
-    <div class="preview-header">
-      <div class="preview-title">
-        <span>Detected Tracks</span>
+    <textarea id="songList" placeholder="Paste your tracklist here...&#10;• Queen - Bohemian Rhapsody&#10;• Daft Punk - Get Lucky"></textarea>
+  </section>
+
+  <!-- Now Playing Hero Card (Visible during playback) -->
+  <section id="nowPlayingCard" class="now-playing-card hidden">
+    <div class="album-art-wrap">
+      <img id="currentThumb" src="" alt="Album Art">
+      <div class="equalizer">
+        <span class="bar bar-1"></span>
+        <span class="bar bar-2"></span>
+        <span class="bar bar-3"></span>
+      </div>
+    </div>
+    <div class="now-playing-meta">
+      <span class="status-badge">NOW PLAYING</span>
+      <h4 id="currentTrackTitle">Track Title</h4>
+      <span id="currentTrackSubtitle">YouTube Audio</span>
+    </div>
+  </section>
+
+  <!-- Live Queue Preview Area -->
+  <section id="previewWrapper" class="queue-section hidden">
+    <div class="queue-header">
+      <div class="queue-title">
+        <span>Up Next</span>
         <span id="trackCount" class="badge">0</span>
       </div>
-      <!-- Clear All Button -->
-      <button id="clearAllBtn" class="clear-btn" type="button">Clear All</button>
+      <button id="clearAllBtn" class="text-btn">Clear</button>
     </div>
-    <ul id="previewList"></ul>
-  </div>
+    <ul id="previewList" class="track-list"></ul>
+  </section>
 
-  <button id="startBtn">Play All</button>
-  <div id="status"></div>
+  <!-- Persistent Bottom Action Area & Player -->
+  <footer class="bottom-container">
+    <div id="actionRow" class="action-row">
+      <button id="startBtn" class="primary-btn">
+        <span>Play All</span>
+      </button>
+      <button id="copyLinkBtn" class="secondary-btn" title="Copy Shareable Link" disabled>
+        🔗
+      </button>
+    </div>
+
+    <div id="status" class="status-text"></div>
+
+    <!-- Floating Mini Player -->
+    <div id="miniPlayer" class="mini-player hidden">
+      <div class="player-controls">
+        <button id="prevBtn" class="media-btn" title="Previous">⏮</button>
+        <button id="playPauseBtn" class="media-btn main-play" title="Play/Pause">⏸</button>
+        <button id="nextBtn" class="media-btn" title="Next">⏭</button>
+      </div>
+    </div>
+  </footer>
 
   <script src="popup.js"></script>
 </body>
