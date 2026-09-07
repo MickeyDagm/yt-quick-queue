@@ -150,8 +150,18 @@ async function fetchVideoId(query) {
   const response = await fetch(searchUrl);
   const html = await response.text();
 
-  const match = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
+
+  const organicMatch = html.match(/"videoRenderer":\s*\{\s*"videoId":\s*"([a-zA-Z0-9_-]{11})"/);
+  if (organicMatch && organicMatch[1]) {
+    return organicMatch[1];
+  }
+
+  const jsonIdMatch = html.match(/"videoId":\s*"([a-zA-Z0-9_-]{11})"/);
+  if (jsonIdMatch && jsonIdMatch[1]) {
+    return jsonIdMatch[1];
+  }
+  const fallbackMatch = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
+  return fallbackMatch ? fallbackMatch[1] : null;
 }
 
 let draggedIndex = null;
