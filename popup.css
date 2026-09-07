@@ -254,3 +254,32 @@ textarea::placeholder {
 .hidden {
   display: none !important;
 }
+
+/* Drag handle and item dragging states */
+.drag-handle {
+  cursor: grab;
+  color: var(--text-secondary);
+  font-size: 13px;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  padding-right: 4px;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+#previewList li[draggable="true"] {
+  cursor: default;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+#previewList li.dragging {
+  opacity: 0.4;
+  background-color: var(--border-color);
+}
+
+#previewList li.drag-over {
+  border-top: 2px solid var(--accent);
+}

@@ -119,6 +119,7 @@ button.addEventListener('click', async () => {
 function parseTrackInput(rawText) {
   if (!rawText) return [];
 
+  // Split by newline, carriage return, commas, or semicolons
   const tokens = rawText.split(/[\r\n;,]+/);
   const cleanTracks = [];
 
@@ -126,8 +127,14 @@ function parseTrackInput(rawText) {
     let line = token.trim();
     if (!line) continue;
 
-    line = line.replace(/^[•\*\-\+–—]\s*/, '');
+    // Remove middle dots, standard bullets, and common list markers:
+    // · (middle dot), • (bullet), ∙, ‣, ⁃, ◦, -, *, +, –, —
+    line = line.replace(/^[\u00B7\u2022\u2219\u2023\u2043\u25E6\*\-\+–—]\s*/u, '');
+
+    // Strip ordered numbers/indices: e.g., "1.", "1)", "[1]", "1 -"
     line = line.replace(/^(\[\d+\]|\d+[\.\)\-]?)\s*/, '');
+
+    // Strip wrapping quotes
     line = line.replace(/^["']|["']$/g, '').trim();
 
     if (line.length > 1) {
@@ -145,4 +152,101 @@ async function fetchVideoId(query) {
 
   const match = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
   return match ? match[1] : null;
+}
+
+let draggedIndex = null;
+
+function renderPreview() {
+  if (currentTracks.length === 0) {
+    previewWrapper.classList.add('hidden');
+    button.textContent = 'Play All';
+    return;
+  }
+
+  previewWrapper.classList.remove('hidden');
+  trackCount.textContent = currentTracks.length;
+  button.textContent = `Play All (${currentTracks.length})`;
+
+  previewList.innerHTML = '';
+
+  currentTracks.forEach((song, idx) => {
+    const li = document.createElement('li');
+    li.setAttribute('draggable', 'true');
+    li.dataset.index = idx;
+
+    // Track info container
+    const infoContainer = document.createElement('div');
+    infoContainer.className = 'track-info';
+
+    // Drag handle icon (6 dots: ⋮⋮)
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '⠿';
+    handle.title = 'Drag to reorder';
+
+    const num = document.createElement('span');
+    num.className = 'track-num';
+    num.textContent = `${idx + 1}.`;
+
+    const title = document.createElement('span');
+    title.textContent = song;
+
+    infoContainer.appendChild(handle);
+    infoContainer.appendChild(num);
+    infoContainer.appendChild(title);
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.title = 'Remove track';
+
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeTrack(idx);
+    });
+
+    li.appendChild(infoContainer);
+    li.appendChild(deleteBtn);
+
+    // HTML5 Drag & Drop Event Listeners
+    li.addEventListener('dragstart', (e) => {
+      draggedIndex = idx;
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+      document.querySelectorAll('#previewList li').forEach(el => el.classList.remove('drag-over'));
+      draggedIndex = null;
+    });
+
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      li.classList.add('drag-over');
+    });
+
+    li.addEventListener('dragleave', () => {
+      li.classList.remove('drag-over');
+    });
+
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      li.classList.remove('drag-over');
+
+      const targetIndex = Number(li.dataset.index);
+      if (draggedIndex !== null && draggedIndex !== targetIndex) {
+        // Move the dragged item to the new position in our array
+        const [movedItem] = currentTracks.splice(draggedIndex, 1);
+        currentTracks.splice(targetIndex, 0, movedItem);
+
+        // DO NOT overwrite textarea.value so original formatting is kept
+        renderPreview();
+      }
+    });
+
+    previewList.appendChild(li);
+  });
 }
