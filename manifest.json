@@ -6,7 +6,8 @@
   "permissions": [
     "tabs",
     "sidePanel",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
     "https://www.youtube.com/*"

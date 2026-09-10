@@ -28,6 +28,7 @@ let draggedIndex = null;
 let currentPlaylistUrl = null;
 let activePlayerTabId = null;
 let isPlaying = true;
+let searchCache = {};
 
 closePanelBtn.addEventListener('click', () => window.close());
 
@@ -63,6 +64,8 @@ clearAllBtn.addEventListener('click', () => {
   status.textContent = '';
   copyLinkBtn.disabled = true;
   currentPlaylistUrl = null;
+  activePlayerTabId = null;
+  isPlaying = false;
   nowPlayingCard.classList.add('hidden');
   miniPlayer.classList.add('hidden');
   miniPlayer.classList.remove('is-minimized');
@@ -71,23 +74,31 @@ clearAllBtn.addEventListener('click', () => {
   inputSection.classList.remove('collapsed');
   if (toggleInputBtn) toggleInputBtn.classList.add('hidden');
   renderPreview();
+  if (typeof saveState === 'function') saveState();
 });
 
 textarea.addEventListener('input', () => {
   currentTracks = parseTrackInput(textarea.value);
   renderPreview();
+  if (typeof saveState === 'function') saveState();
 });
 
 function renderPreview() {
+  if (activePlayerTabId) {
+    button.classList.add('hidden');
+  } else {
+    button.classList.remove('hidden');
+  }
+
   if (currentTracks.length === 0) {
     previewWrapper.classList.add('hidden');
-    button.textContent = 'Play All';
+    button.textContent = 'Play All Songs';
     return;
   }
 
   previewWrapper.classList.remove('hidden');
   trackCount.textContent = currentTracks.length;
-  button.textContent = `Play All (${currentTracks.length})`;
+  button.textContent = `Play All Songs (${currentTracks.length})`;
 
   previewList.innerHTML = '';
 
@@ -158,7 +169,9 @@ function renderPreview() {
       if (draggedIndex !== null && draggedIndex !== targetIndex) {
         const [movedItem] = currentTracks.splice(draggedIndex, 1);
         currentTracks.splice(targetIndex, 0, movedItem);
+        textarea.value = currentTracks.join('\n');
         renderPreview();
+        if (typeof saveState === 'function') saveState();
       }
     });
 
@@ -168,7 +181,9 @@ function renderPreview() {
 
 function removeTrack(index) {
   currentTracks.splice(index, 1);
+  textarea.value = currentTracks.join('\n');
   renderPreview();
+  if (typeof saveState === 'function') saveState();
 }
 
 // "Play All" Action
@@ -185,14 +200,20 @@ button.addEventListener('click', async () => {
 
   for (let i = 0; i < currentTracks.length; i++) {
     const song = currentTracks[i];
-    status.textContent = `Finding (${i + 1}/${currentTracks.length}): ${song}`;
+    
+    if (searchCache[song]) {
+      videoIds.push(searchCache[song]);
+      continue;
+    }
 
+    status.textContent = `Finding (${i + 1}/${currentTracks.length}): ${song}`;
     const query = preferStudio ? `${song} "Official Audio" OR "Topic"` : song;
 
     try {
       const id = await fetchVideoId(query);
       if (id) {
         videoIds.push(id);
+        searchCache[song] = id;
       }
     } catch (err) {
       console.error(`Error searching for ${song}:`, err);
@@ -218,8 +239,9 @@ button.addEventListener('click', async () => {
   if (toggleInputBtn) toggleInputBtn.classList.remove('hidden');
 
   currentPlaylistUrl = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
-  const tab = await chrome.tabs.create({ url: currentPlaylistUrl });
-  activePlayerTabId = tab.id;
+  
+  const newTab = await chrome.tabs.create({ url: currentPlaylistUrl });
+  activePlayerTabId = newTab.id;
 
   button.disabled = false;
   copyLinkBtn.disabled = false;
@@ -230,6 +252,9 @@ button.addEventListener('click', async () => {
   isPlaying = true;
   playPauseBtn.textContent = '⏸';
   status.textContent = `Playing ${videoIds.length} tracks`;
+  renderPreview();
+  
+  if (typeof saveState === 'function') saveState();
 });
 
 // Copy link
@@ -348,6 +373,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       cleanTitle = cleanTitle.replace(/^\(\d+\)\s/, ''); // Remove notification badges like "(1) "
       currentTrackTitle.textContent = cleanTitle;
     }
+    
+    if (typeof saveState === 'function') saveState();
   }
 });
 
@@ -358,5 +385,65 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     status.textContent = 'Player tab was closed.';
     isPlaying = false;
     playPauseBtn.textContent = '▶';
+    renderPreview();
+    if (typeof saveState === 'function') saveState();
   }
 });
+
+// state management functions to inject
+function saveState() {
+  chrome.storage.local.set({
+    textareaValue: textarea.value,
+    currentPlaylistUrl: currentPlaylistUrl,
+    activePlayerTabId: activePlayerTabId,
+    isPlaying: isPlaying,
+    currentThumbSrc: currentThumb.src,
+    currentTrackTitleText: currentTrackTitle.textContent,
+    searchCache: searchCache
+  });
+}
+
+async function loadState() {
+  const data = await chrome.storage.local.get(null);
+  if (data.searchCache) {
+    searchCache = data.searchCache;
+  }
+  if (data.textareaValue) {
+    textarea.value = data.textareaValue;
+    currentTracks = parseTrackInput(textarea.value);
+    renderPreview();
+  }
+  if (data.activePlayerTabId) {
+    try {
+      const tab = await chrome.tabs.get(data.activePlayerTabId);
+      if (tab) {
+        activePlayerTabId = data.activePlayerTabId;
+        currentPlaylistUrl = data.currentPlaylistUrl;
+        isPlaying = data.isPlaying;
+        
+        currentThumb.src = data.currentThumbSrc || '';
+        currentTrackTitle.textContent = data.currentTrackTitleText || '';
+        
+        if (currentTracks.length > 0) {
+          nowPlayingCard.classList.remove('hidden');
+          inputSection.classList.add('collapsed');
+          if (toggleInputBtn) toggleInputBtn.classList.remove('hidden');
+          button.disabled = false;
+          copyLinkBtn.disabled = false;
+          miniPlayer.classList.remove('hidden');
+          miniPlayer.classList.remove('is-minimized');
+          if (playerPill) playerPill.classList.add('hidden');
+          if (playerExpanded) playerExpanded.classList.remove('hidden');
+          playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+          status.textContent = 'Restored active player';
+          renderPreview();
+        }
+      }
+    } catch (e) {
+      chrome.storage.local.remove(['activePlayerTabId', 'currentPlaylistUrl']);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadState);
+

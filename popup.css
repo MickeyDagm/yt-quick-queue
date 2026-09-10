@@ -427,10 +427,14 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-main);
+  transition: all 0.2s ease;
 }
 
 .secondary-btn:hover:not(:disabled) {
   border-color: var(--primary-accent);
+  color: var(--primary-accent);
+  background: var(--bg-elevated);
 }
 
 /* Glassmorphism Mini Player */
